@@ -45,9 +45,6 @@
 
 // Create array to hold the 8 sensor calibration coefficients
 static unsigned int      sensorCoeffs[8]; // unsigned 16-bit integer (0-65535)
-// varD1 and varD2 need to be unsigned 32-bit integers (long 0-4294967295)
-static uint32_t     varD1 = 0;    // Store uncompensated pressure value
-static uint32_t     varD2 = 0;    // Store uncompensated temperature value
 // These three variables are used for the conversion steps
 // They should be signed 32-bit integer initially 
 // i.e. signed long from -2147483648 to 2147483647
@@ -276,10 +273,10 @@ unsigned char MS_5803::MS_5803_CRC(unsigned int n_prom[]) {
 
 //-----------------------------------------------------------------
 // Send commands and read the temperature and pressure from the sensor
-unsigned long MS_5803::MS_5803_ADC(char commandADC) {
+uint32_t MS_5803::MS_5803_ADC(char commandADC) {
 	// varD1 and varD2 will come back as 24-bit values, and so they must be stored in 
 	// a long integer on 8-bit Arduinos.
-    long result = 0;
+    int32_t result = 0;
     // Send the command to do the ADC conversion on the chip
 	Wire.beginTransmission(MS5803_I2C_ADDRESS);
     Wire.write(CMD_ADC_CONV + commandADC);

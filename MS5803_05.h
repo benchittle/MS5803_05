@@ -64,8 +64,8 @@ public:
 //    // Return pressure in mmHg
 //    float mmHg() const				{return mmHgPress;}
     // Return the varD1 and varD2 values, mostly for troubleshooting
-    unsigned long D1val() const 	{return varD1;}
-    unsigned long D2val() const		{return varD2;}
+    uint32_t D1val() const 	{return varD1;}
+    uint32_t D2val() const		{return varD2;}
     
     
 private:
@@ -77,13 +77,13 @@ private:
 //    float psiGauge; // Store gauge pressure in pounds per square inch (psi)
 //    float inHgPress;	// Store pressure in inches of mercury
 //    float mmHgPress;	// Store pressure in mm of mercury
-    unsigned long varD1;	// Store varD1 value
-    unsigned long varD2;	// Store varD2 value
+    uint32_t varD1;	// Store varD1 value
+    uint32_t varD2;	// Store varD2 value
     int32_t mbarInt; // pressure in mbar, initially as a signed long integer
     // Check data integrity with CRC4
-    unsigned char MS_5803_CRC(unsigned int n_prom[]); 
+    uint8_t MS_5803_CRC(uint32_t n_prom[]); 
     // Handles commands to the sensor.
-    unsigned long MS_5803_ADC(char commandADC);
+    uint32_t MS_5803_ADC(char commandADC);
     // Oversampling resolution
     uint16_t _Resolution;
 };
