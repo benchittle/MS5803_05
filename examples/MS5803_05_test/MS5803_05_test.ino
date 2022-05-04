@@ -47,10 +47,10 @@ void setup() {
 void loop() {
   // Use readSensor() function to get pressure and temperature reading. 
   sensor.readSensor();
-   // Uncomment the print commands below to show the raw D1 and D2 values
-//  Serial.print("D1 = ");
+   // Uncomment the print commands below to show the raw varD1 and varD2 values
+//  Serial.print("varD1 = ");
 //  Serial.println(sensor.D1val());
-//  Serial.print("D2 = ");
+//  Serial.print("varD2 = ");
 //  Serial.println(sensor.D2val());
 
   // Show pressure

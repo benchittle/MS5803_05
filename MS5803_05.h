@@ -47,7 +47,7 @@ public:
     void readSensor();
     //*********************************************************************
     // Additional methods to extract temperature, pressure (mbar), and the 
-    // D1,D2 values after readSensor() has been called
+    // varD1,varD2 values after readSensor() has been called
     
     // Return temperature in degrees Celsius.
     float temperature() const       {return tempC;}  
@@ -63,9 +63,9 @@ public:
 //    float inHg() const				{return inHgPress;}
 //    // Return pressure in mmHg
 //    float mmHg() const				{return mmHgPress;}
-    // Return the D1 and D2 values, mostly for troubleshooting
-    unsigned long D1val() const 	{return D1;}
-    unsigned long D2val() const		{return D2;}
+    // Return the varD1 and varD2 values, mostly for troubleshooting
+    unsigned long D1val() const 	{return varD1;}
+    unsigned long D2val() const		{return varD2;}
     
     
 private:
@@ -77,8 +77,8 @@ private:
 //    float psiGauge; // Store gauge pressure in pounds per square inch (psi)
 //    float inHgPress;	// Store pressure in inches of mercury
 //    float mmHgPress;	// Store pressure in mm of mercury
-    unsigned long D1;	// Store D1 value
-    unsigned long D2;	// Store D2 value
+    unsigned long varD1;	// Store varD1 value
+    unsigned long varD2;	// Store varD2 value
     int32_t mbarInt; // pressure in mbar, initially as a signed long integer
     // Check data integrity with CRC4
     unsigned char MS_5803_CRC(unsigned int n_prom[]); 

@@ -45,9 +45,9 @@
 
 // Create array to hold the 8 sensor calibration coefficients
 static unsigned int      sensorCoeffs[8]; // unsigned 16-bit integer (0-65535)
-// D1 and D2 need to be unsigned 32-bit integers (long 0-4294967295)
-static uint32_t     D1 = 0;    // Store uncompensated pressure value
-static uint32_t     D2 = 0;    // Store uncompensated temperature value
+// varD1 and varD2 need to be unsigned 32-bit integers (long 0-4294967295)
+static uint32_t     varD1 = 0;    // Store uncompensated pressure value
+static uint32_t     varD2 = 0;    // Store uncompensated temperature value
 // These three variables are used for the conversion steps
 // They should be signed 32-bit integer initially 
 // i.e. signed long from -2147483648 to 2147483647
@@ -57,7 +57,7 @@ static int32_t 	TEMP = 0;
 // (long long = int64_t)
 static int64_t	Offset = 0;
 static int64_t	Sensitivity  = 0;
-static int64_t	T2 = 0;
+static int64_t	varT2 = 0;
 static int64_t	OFF2 = 0;
 static int64_t	Sens2 = 0;
 // bytes to hold the results from I2C communications with the sensor
@@ -142,26 +142,26 @@ void MS_5803::readSensor() {
 	// of 1, 0.6, 0.4, 0.3, 0.2 respectively. Higher resolutions take longer
 	// to read.
 	if (_Resolution == 256){
-		D1 = MS_5803_ADC(CMD_ADC_D1 + CMD_ADC_256); // read raw pressure
-		D2 = MS_5803_ADC(CMD_ADC_D2 + CMD_ADC_256); // read raw temperature	
+		varD1 = MS_5803_ADC(CMD_ADC_D1 + CMD_ADC_256); // read raw pressure
+		varD2 = MS_5803_ADC(CMD_ADC_D2 + CMD_ADC_256); // read raw temperature	
 	} else if (_Resolution == 512) {
-		D1 = MS_5803_ADC(CMD_ADC_D1 + CMD_ADC_512); // read raw pressure
-		D2 = MS_5803_ADC(CMD_ADC_D2 + CMD_ADC_512); // read raw temperature		
+		varD1 = MS_5803_ADC(CMD_ADC_D1 + CMD_ADC_512); // read raw pressure
+		varD2 = MS_5803_ADC(CMD_ADC_D2 + CMD_ADC_512); // read raw temperature		
 	} else if (_Resolution == 1024) {
-		D1 = MS_5803_ADC(CMD_ADC_D1 + CMD_ADC_1024); // read raw pressure
-		D2 = MS_5803_ADC(CMD_ADC_D2 + CMD_ADC_1024); // read raw temperature
+		varD1 = MS_5803_ADC(CMD_ADC_D1 + CMD_ADC_1024); // read raw pressure
+		varD2 = MS_5803_ADC(CMD_ADC_D2 + CMD_ADC_1024); // read raw temperature
 	} else if (_Resolution == 2048) {
-		D1 = MS_5803_ADC(CMD_ADC_D1 + CMD_ADC_2048); // read raw pressure
-		D2 = MS_5803_ADC(CMD_ADC_D2 + CMD_ADC_2048); // read raw temperature
+		varD1 = MS_5803_ADC(CMD_ADC_D1 + CMD_ADC_2048); // read raw pressure
+		varD2 = MS_5803_ADC(CMD_ADC_D2 + CMD_ADC_2048); // read raw temperature
 	} else if (_Resolution == 4096) {
-		D1 = MS_5803_ADC(CMD_ADC_D1 + CMD_ADC_4096); // read raw pressure
-		D2 = MS_5803_ADC(CMD_ADC_D2 + CMD_ADC_4096); // read raw temperature
+		varD1 = MS_5803_ADC(CMD_ADC_D1 + CMD_ADC_4096); // read raw pressure
+		varD2 = MS_5803_ADC(CMD_ADC_D2 + CMD_ADC_4096); // read raw temperature
 	}
     // Calculate 1st order temperature, dT is a long integer
-	// D2 is originally cast as an uint32_t, but can fit in a int32_t, so we'll
+	// varD2 is originally cast as an uint32_t, but can fit in a int32_t, so we'll
 	// cast both parts of the equation below as signed values so that we can
 	// get a negative answer if needed
-    dT = (int32_t)D2 - ( (int32_t)sensorCoeffs[5] * 256 );
+    dT = (int32_t)varD2 - ( (int32_t)sensorCoeffs[5] * 256 );
     // Use integer division to calculate TEMP. It is necessary to cast
     // one of the operands as a signed 64-bit integer (int64_t) so there's no 
     // rollover issues in the numerator.
@@ -180,13 +180,13 @@ void MS_5803::readSensor() {
     if (TEMP < 2000) {
 		// For 5 bar model
 		// If temperature is below 20.0C
-		T2 = 3 * ((int64_t)dT * dT)  / POW_2_33 ; // 2^33 = 8589934592
-		T2 = (int32_t)T2; // recast as signed 32bit integer
+		varT2 = 3 * ((int64_t)dT * dT)  / POW_2_33 ; // 2^33 = 8589934592
+		varT2 = (int32_t)varT2; // recast as signed 32bit integer
 		OFF2 = 3 * ((TEMP-2000) * (TEMP-2000)) / 8 ;
 		Sens2 = 7 * ((TEMP-2000) * (TEMP-2000)) / 8 ;
     } else { // if TEMP is > 2000 (20.0C)
 		// For 5 bar sensor
-		T2 = 0;
+		varT2 = 0;
 		OFF2 = 0;
 		Sens2 = 0;
     }
@@ -209,7 +209,7 @@ void MS_5803::readSensor() {
     
     // Adjust TEMP, Offset, Sensitivity values based on the 2nd order 
     // temperature correction above.
-    TEMP = TEMP - T2; // both should be int32_t
+    TEMP = TEMP - varT2; // both should be int32_t
     Offset = Offset - OFF2; // both should be int64_t
     Sensitivity = Sensitivity - Sens2; // both should be int64_t
     // Final compensated pressure calculation. We first calculate the pressure
@@ -217,7 +217,7 @@ void MS_5803::readSensor() {
     // float (mbar). 
 
 	// For 5 bar sensor
-	mbarInt = ((D1 * Sensitivity) / 2097152 - Offset) / 32768;
+	mbarInt = ((varD1 * Sensitivity) / 2097152 - Offset) / 32768;
 	mbar = (float)mbarInt / 100;
     
     // Calculate the human-readable temperature in Celsius
@@ -277,7 +277,7 @@ unsigned char MS_5803::MS_5803_CRC(unsigned int n_prom[]) {
 //-----------------------------------------------------------------
 // Send commands and read the temperature and pressure from the sensor
 unsigned long MS_5803::MS_5803_ADC(char commandADC) {
-	// D1 and D2 will come back as 24-bit values, and so they must be stored in 
+	// varD1 and varD2 will come back as 24-bit values, and so they must be stored in 
 	// a long integer on 8-bit Arduinos.
     long result = 0;
     // Send the command to do the ADC conversion on the chip
