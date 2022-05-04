@@ -84,7 +84,7 @@ boolean MS_5803::initializeMS_5803(boolean Verbose) {
     
     if (Verbose) {
     	// Display the oversampling resolution or an error message
-    	if (_Resolution == 256 | _Resolution == 512 | _Resolution == 1024 | _Resolution == 2048 | _Resolution == 4096){
+    	if (_Resolution == 256 || _Resolution == 512 || _Resolution == 1024 || _Resolution == 2048 || _Resolution == 4096){
         	Serial.print("Oversampling setting: ");
         	Serial.println(_Resolution);    		
     	} else {
