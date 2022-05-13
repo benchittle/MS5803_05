@@ -1,4 +1,11 @@
-/*	MS5803_05
+/*	
+ *  This library has been modified to work with the Arduino ESP framework. It 
+ *  has also been modified to work in RTC memory of the ESP32-E for deep sleep
+ *  applications.
+ * 
+ *  Copyright Ben Chittle, 2022
+ * 
+ * MS5803_05
  * 	An Arduino library for the Measurement Specialties MS5803 family
  * 	of pressure sensors. This library uses I2C to communicate with the
  * 	MS5803 using the Wire library from Arduino.
@@ -21,6 +28,7 @@
  * 	Please see accompanying LICENSE.md file for details on reuse and 
  * 	redistribution.
  * 	
+ *  Copyright Ben Chittle, 2022
  * 	Copyright Luke Miller, April 1 2014
  */
 
@@ -81,11 +89,30 @@ private:
     uint32_t varD2;	// Store varD2 value
     int32_t mbarInt; // pressure in mbar, initially as a signed long integer
     // Check data integrity with CRC4
-    uint8_t MS_5803_CRC(uint32_t n_prom[]); 
+    uint8_t MS_5803_CRC(uint16_t n_prom[]); 
     // Handles commands to the sensor.
     uint32_t MS_5803_ADC(char commandADC);
     // Oversampling resolution
     uint16_t _Resolution;
+
+    // Create array to hold the 8 sensor calibration coefficients
+    uint16_t sensorCoeffs[8]; // unsigned 16-bit integer (0-65535)
+    // These three variables are used for the conversion steps
+    // They should be signed 32-bit integer initially 
+    // i.e. signed long from -2147483648 to 2147483647
+    int32_t	dT;
+    int32_t TEMP;
+    // These values need to be signed 64 bit integers 
+    // (long long = int64_t)
+    int64_t	Offset;
+    int64_t	Sensitivity;
+    int64_t	varT2;
+    int64_t	OFF2;
+    int64_t	Sens2;
+    // bytes to hold the results from I2C communications with the sensor
+    byte HighByte;
+    byte MidByte;
+    byte LowByte;
 };
 
 #endif 

@@ -1,4 +1,11 @@
-/*	MS5803_05
+/*	
+ *  This library has been modified to work with the Arduino ESP framework. It 
+ *  has also been modified to work in RTC memory of the ESP32-E for deep sleep
+ *  applications.
+ * 
+ *  Copyright Ben Chittle, 2022
+ * 
+ * MS5803_05
  * 	An Arduino library for the Measurement Specialties MS5803 family
  * 	of pressure sensors. This library uses I2C to communicate with the
  * 	MS5803 using the Wire library from Arduino.
@@ -42,28 +49,8 @@
 #define CMD_ADC_2048	0x06	// ADC resolution=2048
 #define CMD_ADC_4096	0x08	// ADC resolution=4096
 
-
-// Create array to hold the 8 sensor calibration coefficients
-static unsigned int      sensorCoeffs[8]; // unsigned 16-bit integer (0-65535)
-// These three variables are used for the conversion steps
-// They should be signed 32-bit integer initially 
-// i.e. signed long from -2147483648 to 2147483647
-static int32_t	dT = 0;
-static int32_t 	TEMP = 0;
-// These values need to be signed 64 bit integers 
-// (long long = int64_t)
-static int64_t	Offset = 0;
-static int64_t	Sensitivity  = 0;
-static int64_t	varT2 = 0;
-static int64_t	OFF2 = 0;
-static int64_t	Sens2 = 0;
-// bytes to hold the results from I2C communications with the sensor
-static byte HighByte;
-static byte MidByte;
-static byte LowByte;
-
 // Some constants used in calculations below
-const uint64_t POW_2_33 = 8589934592ULL; // 2^33 = 8589934592
+#define POW_2_33 8589934592ULL;
 
 //-------------------------------------------------
 // Constructor
@@ -71,6 +58,14 @@ MS_5803::MS_5803( uint16_t Resolution) {
 	// The argument is the oversampling resolution, which may have values
 	// of 256, 512, 1024, 2048, or 4096.
 	_Resolution = Resolution;
+
+    dT = 0;
+    TEMP = 0;
+    Offset = 0;
+    Sensitivity = 0;
+    varT2 = 0;
+    OFF2 = 0;
+    Sens2 = 0;
 }
 
 //-------------------------------------------------
@@ -103,7 +98,7 @@ boolean MS_5803::initializeMS_5803(boolean Verbose) {
     		HighByte = Wire.read();
     		LowByte = Wire.read();
     	}
-    	sensorCoeffs[i] = (((unsigned int)HighByte << 8) + LowByte);
+    	sensorCoeffs[i] = (((uint16_t)HighByte << 8) + LowByte);
     	if (Verbose){
 			// Print out coefficients 
 			Serial.print("C");
@@ -114,9 +109,9 @@ boolean MS_5803::initializeMS_5803(boolean Verbose) {
     	}
     }
     // The last 4 bits of the 7th coefficient form a CRC error checking code.
-    unsigned char p_crc = sensorCoeffs[7];
+    uint8_t p_crc = sensorCoeffs[7];
     // Use a function to calculate the CRC value
-    unsigned char n_crc = MS_5803_CRC(sensorCoeffs); 
+    uint8_t n_crc = MS_5803_CRC(sensorCoeffs); 
     
     if (Verbose) {
 		Serial.print("p_crc: ");
@@ -238,21 +233,21 @@ void MS_5803::readSensor() {
 // calculated CRC value from the rest of the coefficients. 
 // Based on code from Measurement Specialties application note AN520
 // http://www.meas-spec.com/downloads/C-Code_Example_for_MS56xx,_MS57xx_%28except_analog_sensor%29_and_MS58xx_Series_Pressure_Sensors.pdf
-unsigned char MS_5803::MS_5803_CRC(unsigned int n_prom[]) {
-    int cnt;				// simple counter
-    unsigned int n_rem;		// crc reminder
-    unsigned int crc_read;	// original value of the CRC
-    unsigned char  n_bit;
+uint8_t MS_5803::MS_5803_CRC(uint16_t n_prom[]) {
+    int16_t cnt;				// simple counter
+    uint16_t n_rem;		// crc reminder
+    uint16_t crc_read;	// original value of the CRC
+    uint8_t  n_bit;
     n_rem = 0x00;
     crc_read = sensorCoeffs[7];		// save read CRC
     sensorCoeffs[7] = (0xFF00 & (sensorCoeffs[7])); // CRC byte replaced with 0
     for (cnt = 0; cnt < 16; cnt++)
     { // choose LSB or MSB
         if (cnt%2 == 1) {
-        	n_rem ^= (unsigned short)((sensorCoeffs[cnt>>1]) & 0x00FF);
+        	n_rem ^= (uint16_t)((sensorCoeffs[cnt>>1]) & 0x00FF);
         }
         else {
-        	n_rem ^= (unsigned short)(sensorCoeffs[cnt>>1] >> 8);
+        	n_rem ^= (uint16_t)(sensorCoeffs[cnt>>1] >> 8);
         }
         for (n_bit = 8; n_bit > 0; n_bit--)
         {
@@ -314,7 +309,7 @@ uint32_t MS_5803::MS_5803_ADC(char commandADC) {
     	LowByte = Wire.read();
     }
     // Combine the bytes into one integer
-    result = ((long)HighByte << 16) + ((long)MidByte << 8) + (long)LowByte;
+    result = ((uint32_t)HighByte << 16) + ((uint32_t)MidByte << 8) + (uint32_t)LowByte;
     return result;
 }
 
