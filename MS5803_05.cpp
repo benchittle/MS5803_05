@@ -319,5 +319,5 @@ void MS_5803::resetSensor() {
     	Wire.beginTransmission(MS5803_I2C_ADDRESS);
         Wire.write(CMD_RESET);
         Wire.endTransmission();
-    	delay(10);
+    	delay(5);
 }
