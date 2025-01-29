@@ -32,6 +32,18 @@
  * 	Copyright Luke Miller, April 1 2014
  */
 
+#define MS5803_I2C_ADDRESS    0x77 // or 0x76
+
+#define CMD_RESET		0x1E	// ADC reset command
+#define CMD_ADC_READ	0x00	// ADC read command
+#define CMD_ADC_CONV	0x40	// ADC conversion command
+#define CMD_ADC_D1		0x00	// ADC D1 conversion
+#define CMD_ADC_D2		0x10	// ADC D2 conversion
+#define CMD_ADC_256		0x00	// ADC resolution=256
+#define CMD_ADC_512		0x02	// ADC resolution=512
+#define CMD_ADC_1024	0x04	// ADC resolution=1024
+#define CMD_ADC_2048	0x06	// ADC resolution=2048
+#define CMD_ADC_4096	0x08	// ADC resolution=4096
 
 #ifndef __MS_5803__
 #define __MS_5803__
@@ -53,6 +65,9 @@ public:
     void resetSensor();
     // Read the sensor
     void readSensor();
+    // Utility method for converting raw D1 and D2 values (get output using
+    // pressure() and temperature() methods).
+    void convertRaw(uint32_t d1Val, uint32_t d2Val);
     //*********************************************************************
     // Additional methods to extract temperature, pressure (mbar), and the 
     // varD1,varD2 values after readSensor() has been called
@@ -75,6 +90,7 @@ public:
     uint32_t D1val() const 	{return varD1;}
     uint32_t D2val() const		{return varD2;}
     
+    uint16_t sensorCoeffs[8]; // unsigned 16-bit integer (0-65535)
     
 private:
     
@@ -96,7 +112,7 @@ private:
     uint16_t _Resolution;
 
     // Create array to hold the 8 sensor calibration coefficients
-    uint16_t sensorCoeffs[8]; // unsigned 16-bit integer (0-65535)
+    
     // These three variables are used for the conversion steps
     // They should be signed 32-bit integer initially 
     // i.e. signed long from -2147483648 to 2147483647

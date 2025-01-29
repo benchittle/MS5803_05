@@ -36,18 +36,7 @@
 
 // For I2C, set the CSB Pin (pin 3) high for address 0x76, and pull low
 // for address 0x77. If you use 0x77, change the value on the line below:
-#define MS5803_I2C_ADDRESS    0x77 // or 0x76
 
-#define CMD_RESET		0x1E	// ADC reset command
-#define CMD_ADC_READ	0x00	// ADC read command
-#define CMD_ADC_CONV	0x40	// ADC conversion command
-#define CMD_ADC_D1		0x00	// ADC D1 conversion
-#define CMD_ADC_D2		0x10	// ADC D2 conversion
-#define CMD_ADC_256		0x00	// ADC resolution=256
-#define CMD_ADC_512		0x02	// ADC resolution=512
-#define CMD_ADC_1024	0x04	// ADC resolution=1024
-#define CMD_ADC_2048	0x06	// ADC resolution=2048
-#define CMD_ADC_4096	0x08	// ADC resolution=4096
 
 // Some constants used in calculations below
 #define POW_2_33 8589934592ULL;
@@ -149,11 +138,15 @@ void MS_5803::readSensor() {
 		varD1 = MS_5803_ADC(CMD_ADC_D1 + CMD_ADC_4096); // read raw pressure
 		varD2 = MS_5803_ADC(CMD_ADC_D2 + CMD_ADC_4096); // read raw temperature
 	}
+    convertRaw(varD1, varD2);
+}
+
+void MS_5803::convertRaw(uint32_t d1Val, uint32_t d2Val) {
     // Calculate 1st order temperature, dT is a long integer
 	// varD2 is originally cast as an uint32_t, but can fit in a int32_t, so we'll
 	// cast both parts of the equation below as signed values so that we can
 	// get a negative answer if needed
-    dT = (int32_t)varD2 - ( (int32_t)sensorCoeffs[5] * 256 );
+    dT = (int32_t)d2Val - ( (int32_t)sensorCoeffs[5] * 256 );
     // Use integer division to calculate TEMP. It is necessary to cast
     // one of the operands as a signed 64-bit integer (int64_t) so there's no 
     // rollover issues in the numerator.
@@ -209,11 +202,11 @@ void MS_5803::readSensor() {
     // float (mbar). 
 
 	// For 5 bar sensor
-	mbarInt = ((varD1 * Sensitivity) / 2097152 - Offset) / 32768;
-	mbar = (float)mbarInt / 100;
+	mbarInt = ((d1Val * Sensitivity) / 2097152 - Offset) / 32768;
+    mbar = (float)mbarInt / 100;
     
     // Calculate the human-readable temperature in Celsius
-    tempC  = (float)TEMP / 100;
+    tempC = (float)TEMP / 100;
     
     // Start other temperature conversions by converting mbar to psi absolute
 //    psiAbs = mbar * 0.0145038;
@@ -225,7 +218,6 @@ void MS_5803::readSensor() {
 //    mmHgPress = mbar * 0.7500617;
 //    // Convert temperature to Fahrenheit
 //    tempF = (tempC * 1.8) + 32;
-    
 }
 
 //------------------------------------------------------------------
